@@ -1,11 +1,9 @@
 h1 {
-  color: #ffffff;
   margin: 0;
 }
 
 .App {
   align-items: center;
-  background-color: #282c34;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -30,4 +28,8 @@ h1 {
 
 .App-link {
   color: #09d3ac;
+}
+
+.MuiToolbar-root {
+  justify-content: space-between;
 }

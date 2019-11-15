@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Avatar, TextField, List, ListItem, ListItemText, ListItemAvatar, Typography } from "@material-ui/core"
+import { AppBar, Avatar, List, ListItem, ListItemAvatar, ListItemText, TextField, Toolbar, Typography } from "@material-ui/core";
 import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import firebase from 'firebase';
@@ -23,14 +23,19 @@ class ChatRoom extends Component {
             root: {
                 backgroundColor: theme.palette.background.paper,
                 maxWidth: 360,
-                width: '100%'
+                width: '100%',
             },
             textField: {
-                color: 'white',
                 marginLeft: theme.spacing(1),
                 marginRight: theme.spacing(1),
                 width: 200,
             },
+            title: {
+                flexGrow: 1,
+            },
+            menuButton: {
+                marginRight: theme.spacing(2),
+            }
         }));
         this.logout = this.logout.bind(this);
     }
@@ -99,11 +104,10 @@ class ChatRoom extends Component {
                 </ListItemAvatar>
                 <ListItemText
                     style={{ 
-                        color: '#ffffff',
                         wordBreak: "break-word" 
                     }}
                     primary={ message.user.displayName }
-                    secondary={ <Typography style={{ color: '#ffffff'}}>{message.text}</Typography> }
+                    secondary={message.text}
                 />
             </ListItem>
         ))
@@ -117,13 +121,19 @@ class ChatRoom extends Component {
         if ( this.state.isSignedIn ) {
             return (
                 <div className="App">
-                    <h1>Chat Room</h1>
-                    <Button 
-                        variant="contained" 
-                        className={this.classes.button}
-                        onClick={ this.logout }>
-                        Logout
-                    </Button>
+                    <AppBar>
+                        <Toolbar display="flex" justifyContent="space-between">
+                            <Typography variant="h6" className={this.classes.title}>
+                                Chat Room
+                            </Typography>
+                            <Button
+                                variant="contained" 
+                                className={this.classes.button}
+                                onClick={ this.logout }>
+                                Logout
+                            </Button>
+                        </Toolbar>
+                    </AppBar>
                     <List className={this.classes.root}>{this.renderMessages()}</List>
                     <TextField
                         autoFocus={true}
@@ -132,10 +142,7 @@ class ChatRoom extends Component {
                         placeholder="Type something.."
                         onChange={event => this.setState({ text: event.target.value })}
                         value={this.state.text}
-                        onKeyPress={this.onSubmit}
-                        InputProps={{
-                            className: this.classes.textField
-                        }} />
+                        onKeyPress={this.onSubmit} />
                     <span ref={el => (this.bottomSpan = el)} />
                 </div>
             );
