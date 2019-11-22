@@ -3,7 +3,8 @@ import { Avatar, ListItem, ListItemAvatar, ListItemText, TextField } from "@mate
 //import Button from '@material-ui/core/Button';
 import firebase from 'firebase';
 import { Redirect } from 'react-router-dom';
-import Messages from '../Messages';
+import Messages from './Messages';
+import Users from './Users';
 
 import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
@@ -20,25 +21,39 @@ class ChatRoom extends Component {
             messages: [],
             text: "", // for chat
             image: null, // for upload
-            url: "" // for upload
+            url: "", // for upload
+            progress: 0
         };
+        this.registerUser = this.registerUser.bind(this);
         this.logout = this.logout.bind(this);
     }
     
-    /*componentDidMount = () => {
-        const self = this;
+    componentDidMount = () => {
         this.unregisteredAuthObserver = firebase.auth().onAuthStateChanged(user => {
-            console.log(user);
-            self.setState({
-                isSignedIn: Boolean(user)
-            });
-
+            this.registerUser(user);
         });
     }
 
     componentWillUnmount = () => {
         this.unregisteredAuthObserver();
-    }*/
+    }
+
+    registerUser = user => {
+        var newUser = {
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            email: user.email,
+            online: true
+        }
+        if ( user.emailVerified ) {
+            firebase
+            .database()
+            .ref("users/" + user.uid)
+            .set(newUser);   
+        } else {
+            this.logout();
+        }
+    }
 
     onSubmit = event => {
         if (event.charCode === 13 && this.state.text.trim() !== "") {
@@ -48,18 +63,18 @@ class ChatRoom extends Component {
     }
 
     writeMessageToDB = message => {
+        console.log(this.state.image);
+        const currentUser = firebase.auth().currentUser;
         firebase
             .database()
             .ref("messages/")
             .push({
-                id: this.state.messages.length,
-                text: message,
+                displayName: currentUser.displayName,
+                email: currentUser.email,
                 image: this.state.image,
-                user: {
-                    displayName: firebase.auth().currentUser.displayName,
-                    photoURL: firebase.auth().currentUser.photoURL,
-                    email: firebase.auth().currentUser.email
-                }
+                photoURL: currentUser.photoURL,
+                text: message,
+                userUID: currentUser.uid
             });
     }
 
@@ -73,10 +88,9 @@ class ChatRoom extends Component {
             snapshot.forEach(child => {
                 var message = child.val();
                 newMessages.push({ 
-                    id: message.id, 
                     image: message.image,
                     text: message.text,
-                    userId: message.userId
+                    userUID: message.userUID
                 });
             });
             this.setState({ 
@@ -118,27 +132,30 @@ class ChatRoom extends Component {
                 .ref("images")
                 .child(image.name)
                 .getDownloadURL()
-                .then(url => {
-                    this.setState({ url });
+                .then(image => {
+                    this.setState({ image });
+                    this.writeMessageToDB(this.state.text)
+                    this.setState({ text: "" })
                 });
-                this.writeMessageToDB(this.state.text)
-                this.setState({ text: "" })
             }
         );
     };
 
     renderMessages = () => {
+        console.log(firebase.auth().currentUser.uid);
+        var userData = this.getUser(firebase.auth().currentUser.uid);
+        console.log(userData);
         return this.state.messages.map(message => (
-            <ListItem key={ message.id }>
+            <ListItem key={ message.key }>
                 <ListItemAvatar>
-                    <Avatar alt={ message.user.displayName } src={ message.user.photoURL } />
+                    <Avatar alt={ userData.displayName } src={ userData.photoURL } />
                 </ListItemAvatar>
                 <ListItemText
                     style={{ 
                         wordBreak: "break-word" 
                     }}
-                    primary={ message.user.displayName }
-                    secondary={message.text}
+                    primary={ userData.displayName }
+                    secondary={ message.text }
                 />
                 {this.getMessageImage(message.image)}
             </ListItem>
@@ -159,49 +176,67 @@ class ChatRoom extends Component {
     }
     
     logout = () => {
+        firebase
+            .database()
+            .ref("users/" + firebase.auth().currentUser.uid)
+            .update({
+                online: false
+            });
         firebase.auth().signOut();
     }
 
     render() {
-        //console.log(this.state.isSignedIn);
-        //if ( this.state.isSignedIn ) {
-            return (
-                <div className="Login">
-                    <AppBar position="static">
-                        <Toolbar>
-                            <Typography 
-                                className="title" 
-                                variant="h6">
-                                Chat Room
-                            </Typography>
-                            <Button 
-                                onClick={this.logout} 
-                                variant="contained">
-                                Logout
-                            </Button>
-                        </Toolbar>
-                    </AppBar>
-                    <Grid
-                        alignItems="start"
-                        container
-                        direction="row"
-                        justify="center">
-                        <Grid 
-                            item 
-                            xs={2}>
-                            User List
-                        </Grid>
-                        <Grid 
-                            item 
-                            xs={10}>
-                            ChatRoom
-                        </Grid>
+        return (
+            <div className="Login">
+                <AppBar position="static">
+                    <Toolbar>
+                        <Typography 
+                            className="title" 
+                            variant="h6">
+                            Chat Room
+                        </Typography>
+                        <Button 
+                            onClick={this.logout} 
+                            variant="contained">
+                            Logout
+                        </Button>
+                    </Toolbar>
+                </AppBar>
+                <Grid
+                    alignItems="flex-start"
+                    container
+                    direction="row">
+                    <Grid 
+                        item 
+                        xs={2}>
+                        <Users />
                     </Grid>
-                </div>
-            );
-        /*} else {
-            return <Redirect to="/login" />
-        }*/
+                    <Grid 
+                        item 
+                        xs={10}>
+                        <Messages />
+                        <div>
+                            <TextField
+                                autoFocus={true}
+                                multiline={true}
+                                rowsMax={3}
+                                placeholder="Type something.."
+                                onChange={event => this.setState({ text: event.target.value })}
+                                value={this.state.text}
+                                onKeyPress={this.onSubmit} />
+                            <progress value={this.state.progress} max="100" className="progress" />
+                            <input type="file" onChange={this.handleChange} />
+                            <Button
+                                onClick={this.handleUpload}
+                                variant="contained">
+                                Upload
+                            </Button>
+                        </div>
+                        <span ref={el => (this.bottomSpan = el)} />
+                    </Grid>
+                </Grid>
+            </div>
+        );
     }
 }
 

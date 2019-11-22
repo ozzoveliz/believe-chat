@@ -12,7 +12,7 @@ class App extends Component {
         super(props);
         firebase.initializeApp(config);
         this.state = {
-            isSignedIn: Boolean(firebase.auth().currentUser) ? false : true
+            isSignedIn: null
         }
     }
 
@@ -29,7 +29,7 @@ class App extends Component {
     }
 
     render() {
-        console.log("isSignedIn: " + this.state.isSignedIn);
+        //console.log("isSignedIn: " + this.state.isSignedIn);
         return (
             <React.Fragment>
                 <CssBaseline />
