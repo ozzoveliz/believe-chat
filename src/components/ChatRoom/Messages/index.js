@@ -71,18 +71,6 @@ class Messages extends Component {
         }
     }
 
-    getImage = () => {
-        if ( this.state.image ) {
-            return (
-                <img
-                    src={this.state.image}
-                    alt="Uploaded Images"
-                    height="300"
-                    width="400" />
-            );
-        } 
-    }
-
     renderMessages = () => {
         let keyCounter = 0;
         const messages = this.state.messages.map(message => {

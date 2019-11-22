@@ -57,8 +57,8 @@ class ChatRoom extends Component {
 
     onSubmit = event => {
         if (event.charCode === 13 && this.state.text.trim() !== "") {
-          this.writeMessageToDB(this.state.text)
-          this.setState({ text: "" })
+            this.writeMessageToDB(this.state.text)
+            this.setState({ text: "" })
         }
     }
 
